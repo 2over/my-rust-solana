@@ -1,73 +1,31 @@
-use std::slice::Iter;
+// 导入Anchor, 只需要导入一个包, 非常简洁
+use anchor_lang::prelude::*;
 
-use solana_program::{
-    account_info::AccountInfo,
-    entrypoint,
-    entrypoint::ProgramResult,
-    msg,
-    pubkey::Pubkey,
-    program::{invoke},
-    instruction::{AccountMeta, Instruction},
-    program_error::ProgramError,
-};
+// 使用Anchor, 要声明本程序的公钥， Solana Playground会在构建程序时自动填充程序id,
+// 可以不填
+
+declare_id!("7pahNQg1NucaGBEstJeHktok5QTe15iLK2fZMxbihthL");
 
 
-// 定义代码的入口, process_instruction是程序启动时被调用的函数
-entrypoint!(process_instruction);
+// program宏， 会自动生成一些必要的样本代码，保证Anchor程序正常运行
+#[program]
 
-// 参数为当前程序的id、传入的账户数组 以及传入的指令数据字段
-pub fn process_instruction(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    _instruction_data: &[u8]
-) -> ProgramResult {
+// 定义hello_world模板，里面可以写函数、变量等
+mod hello_world {
+    // 导入当前模块的父模块的全部公开项(如变量、函数)
+    use super::*;
 
-    // 获取传入账户数组的迭代器
-    let accounts_iter: &mut Iter<AccountInfo> = &mut accounts.iter();
-
-    // 获取调用该程序的账户
-    let caller_account: &AccountInfo = accounts_iter.next().ok_or_else(|| {
-        msg!("Failed to get caller account");
-        ProgramError::NotEnoughAccountKeys
-    })?;
-
-    // 被调用的账户程序
-    let called_program_account: &AccountInfo = accounts_iter.next().ok_or_else(|| {
-        msg!("Failed to get called program account");
-        ProgramError::NotEnoughAccountKeys
-    })?;
-
-    // 创建指向"Hello, Web3 Solana" 合约的指令
-    let instruction: Instruction = Instruction {
-        program_id: *called_program_account.key,
-        accounts: vec![
-            // true标识需要签名 new_readonly 只读
-            AccountMeta::new(*caller_account.key, true),
-            AccountMeta::new_readonly(*called_program_account.key, false),
-
-        ],
-        data: vec![], // 这里可以传递给被调用程序的数据
-    };
-
-    // 调用""Hello Web3 Solana" 合约
-    invoke(
-        &instruction,
-        // 再传入一边地址，顺序与instruction中的accounts账户顺序一致
-        &[
-            // 签名者
-            caller_account.clone(),
-            // 被调用的程序
-            called_program_account.clone(),
-        ],
-    )?;
-
-
-    // 打印消息
-    msg!("调用合约成功");
-    msg!("中转合约的地址program_id是{}", program_id.to_string());
-    msg!("发起调用的用户账户 caller_account 是{}", caller_account.key.to_string());
-    msg!("最终调用的目标地址 called_program_account 是:{}", called_program_account.key.to_string());
-
-    // 返回成功
-    Ok(())
+    // 访问权限为pub公开，入参为Context类型，出参为Result<()>类型
+    // Context为Anchor提供的反省，封装调用函数的上下文(如账户信息),
+    // Hello 是一个结构体，定义了调用该函数所需的账户信息
+    pub fn hello(ctx: Context<Hello>) -> Result<()> {
+        msg!("Hello Anchor!");
+        Ok(())
+    }
 }
+
+// derive(Accounts)宏，同样可以自动生成一些样本代码，保证符合函数需要的账户信息
+#[derive(Accounts)]
+
+// 具体的Hello结构体,因为仅仅时打印日志不需要任何账户，此处结构体为空
+pub struct Hello {}
